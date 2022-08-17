@@ -1,11 +1,13 @@
 {
   "scripts": {
-    "run-lint": "yarn hardhat check"
+    "run-lint": "yarn hardhat check",
+    "compile": "yarn hardhat compile"
   },
   "dependencies": {
     "hardhat": "^2.10.2"
   },
   "devDependencies": {
+    "@chainlink/contracts": "^0.4.2",
     "@ethersproject/abi": "^5.4.7",
     "@ethersproject/providers": "^5.4.7",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.0",
