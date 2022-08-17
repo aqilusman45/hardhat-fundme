@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "run-lint": "yarn hardhat check"
+  },
   "dependencies": {
     "hardhat": "^2.10.2"
   },
