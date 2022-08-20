@@ -1,6 +1,7 @@
 import { network } from "hardhat"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { networkConfig } from "../config"
+import { networkConfig, developmentChains } from "../config"
+import { verify } from "../utils/verify"
 
 export default async ({
     deployments,
@@ -10,19 +11,27 @@ export default async ({
     const { deployer } = await getNamedAccounts()
     const chainId = network.config?.chainId || 4
 
-    let priceFeedAddress;
+    let priceFeedAddress
     if (chainId === 31337) {
-        const priceFeedAggregator = await deployments.get("MockV3Aggregator");
-        priceFeedAddress = priceFeedAggregator.address;
+        const priceFeedAggregator = await deployments.get("MockV3Aggregator")
+        priceFeedAddress = priceFeedAggregator.address
     } else {
         const { ethUsdPriceFeed } = networkConfig[chainId]
-        priceFeedAddress = ethUsdPriceFeed;
+        priceFeedAddress = ethUsdPriceFeed
     }
+    const args = [priceFeedAddress] // constructor arguments, priceFeedAddress for FundMe contract
     const fundMe = await deploy("FundMe", {
         from: deployer,
-        args: [priceFeedAddress], // constructor arguments, priceFeedAddress for FundMe contract
+        args,
         log: true,
+        waitConfirmations: (network.config as any)?.blockConfirmation || 1,
     })
+    if (
+        !developmentChains.includes(network.name) &&
+        process.env.ETHERSCAN_API_KEY
+    ) {
+        await verify(fundMe.address, args)
+    }
 }
 
 export const tags = ["all", "fundme"]
