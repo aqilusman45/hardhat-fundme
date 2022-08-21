@@ -1,11 +1,25 @@
 // SPDX-License-Identifier: MIT
+
+// Pragma Statements
 pragma solidity ^0.8.8;
 
+// Imports
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./PriceConverter.sol";
 
-error NotOwner();
+// Error Code
+error FundMe_NotOwner();
 
+// Interfaces
+// Libraries
+
+// Contracts
+/**
+ * @title A contract for crowd funding
+ * @author Usman
+ * @notice this contract is a sample contract
+ * @dev this implements price feeds for our contract
+ */
 contract FundMe {
     using PriceConverter for uint256;
 
@@ -14,33 +28,48 @@ contract FundMe {
     AggregatorV3Interface public priceFeed;
 
     // Could we make this constant?  /* hint: no! We should make it immutable! */
-    address public /* immutable */ i_owner;
-    uint256 public constant MINIMUM_USD = 50 * 10 ** 18;
-    
+    address public immutable i_owner;
+    uint256 public constant MINIMUM_USD = 50 * 10**18;
+
     constructor(address _priceFeedAddress) {
         priceFeed = AggregatorV3Interface(_priceFeedAddress);
         i_owner = msg.sender;
     }
 
+    receive() external payable {
+        fund();
+    }
+
+    fallback() external payable {
+        fund();
+    }
+
+    modifier onlyOwner() {
+        // require(msg.sender == owner);
+        if (msg.sender != i_owner) revert FundMe_NotOwner();
+        _;
+    }
+
     function fund() public payable {
-        require(msg.value.getConversionRate(priceFeed) >= MINIMUM_USD, "You need to spend more ETH!");
+        require(
+            msg.value.getConversionRate(priceFeed) >= MINIMUM_USD,
+            "You need to spend more ETH!"
+        );
         // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
         addressToAmountFunded[msg.sender] += msg.value;
         funders.push(msg.sender);
     }
-    
-    function getVersion() public view returns (uint256){
+
+    function getVersion() public view returns (uint256) {
         return priceFeed.version();
     }
-    
-    modifier onlyOwner {
-        // require(msg.sender == owner);
-        if (msg.sender != i_owner) revert NotOwner();
-        _;
-    }
-    
-    function withdraw() payable onlyOwner public {
-        for (uint256 funderIndex=0; funderIndex < funders.length; funderIndex++){
+
+    function withdraw() public payable onlyOwner {
+        for (
+            uint256 funderIndex = 0;
+            funderIndex < funders.length;
+            funderIndex++
+        ) {
             address funder = funders[funderIndex];
             addressToAmountFunded[funder] = 0;
         }
@@ -51,29 +80,23 @@ contract FundMe {
         // bool sendSuccess = payable(msg.sender).send(address(this).balance);
         // require(sendSuccess, "Send failed");
         // call
-        (bool callSuccess, ) = payable(msg.sender).call{value: address(this).balance}("");
+        (bool callSuccess, ) = payable(msg.sender).call{
+            value: address(this).balance
+        }("");
         require(callSuccess, "Call failed");
     }
+
     // Explainer from: https://solidity-by-example.org/fallback/
     // Ether is sent to contract
     //      is msg.data empty?
-    //          /   \ 
+    //          /   \
     //         yes  no
     //         /     \
-    //    receive()?  fallback() 
-    //     /   \ 
+    //    receive()?  fallback()
+    //     /   \
     //   yes   no
     //  /        \
     //receive()  fallback()
-
-    fallback() external payable {
-        fund();
-    }
-
-    receive() external payable {
-        fund();
-    }
-
 }
 
 // Concepts we didn't cover yet (will cover in later sections)
