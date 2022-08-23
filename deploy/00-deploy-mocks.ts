@@ -2,7 +2,7 @@ import { network } from "hardhat"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DECIMALS, developmentChains, INITIAL_ANSWER } from "../config"
 
-export default async ({
+const deployMocks = async ({
     deployments,
     getNamedAccounts,
 }: HardhatRuntimeEnvironment) => {
@@ -22,4 +22,5 @@ export default async ({
     }
 }
 
-export const tags = ["all", "mocks"]
+export default deployMocks
+deployMocks.tags = ["all", "mocks"]
